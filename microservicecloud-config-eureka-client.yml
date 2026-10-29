@@ -1,0 +1,67 @@
+
+spring:
+  profiles:
+    active:
+      - dev
+
+---
+
+server:
+  port: 8001
+
+mybatis:
+  config-location: classpath:mybatis/mybatis.cfg.xml        # mybatis配置文件所在路径
+  type-aliases-package: com.atguigu.springcloud.entities    # 所有Entity别名类所在包
+  mapper-locations:
+    - classpath:mybatis/mapper/**/*.xml                       # mapper映射文件
+
+spring:
+  profiles: dev
+  application:
+    name: microservicecloud-config-dept-client
+  cloud:
+    inetutils:
+      ignored-interfaces:
+        - docker0    # 排除 docker 虚拟网卡（DOWN 状态），避免 Eureka 选到不可达的 172.17.0.1
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource            # 当前数据源操作类型
+    driver-class-name: com.mysql.jdbc.Driver                 # mysql驱动包（配合 mysql-connector-java 5.1.49）
+    url: jdbc:mysql://localhost:3307/cloudDB01?useUnicode=true&characterEncoding=utf8&useSSL=false  # 数据库名称
+    username: root
+    password: root
+    dbcp2:
+      min-idle: 5                                           # 数据库连接池的最小维持连接数
+      initial-size: 5                                       # 初始化连接数
+      max-total: 5                                          # 最大连接数
+      max-wait-millis: 200                                  # 等待连接获取的最大超时时间
+
+eureka:
+  client:  # 客户端注册进eureka服务列表内
+    service-url:
+      #      defaultZone: http://localhost:7001/eureka
+      defaultZone: http://eureka7001.com:7001/eureka/,http://eureka7002.com:7002/eureka/,http://eureka7003.com:7003/eureka/
+  instance:
+    hostname: localhost # 显式指定实例主机名：状态列显示 localhost:服务名:端口（跟课程一致），链接也能打开
+    #    instance-id: ${eureka.instance.hostname}:${spring.application.name}:${server.port} # 状态列显示格式（默认会取网卡IP）
+    instance-id: microservicecloud-dept8001 # 自定义服务名称信息（必须每个实例唯一，否则注册中心里互相覆盖、只剩一个实例，负载均衡就没有可选节点了）
+    prefer-ip-address: true # 访问路径可以显示ip地址
+
+---
+
+server:
+  port: 7001
+
+spring:
+  profiles: test
+  application:
+    name: microservicecloud-config-eureka-client
+
+eureka:
+  instance:
+    hostname: eureka7001.com  # eureka服务端名称
+  client:
+    register-with-eureka: false # false表示不向注册中心注册自己
+    fetch-registry: false # false 表示自己就是注册中心，我的职责就是维护服务实例，并不需要去检验服务
+    service-url:
+      # 单机 defaultZone http://${eureka.instance.hostname}:${server.port}/eureka/   # 设置与Eureka Server交互的地址查询服务和注
+      defaultZone: http://eureka7002.com:7002/eureka/,http://eureka7003.com:7003/eureka/
